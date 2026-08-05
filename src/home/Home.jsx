@@ -1,4 +1,5 @@
 import Hero from './Hero.jsx'
+import EmergencySection from '../components/EmergencySection.jsx'
 import BloodTypes from './BloodTypes.jsx'
 import Services from './Services.jsx'
 import Steps from './Steps.jsx'
@@ -11,6 +12,7 @@ function Home() {
   return (
     <>
       <Hero />
+      <EmergencySection />
       <BloodTypes />
       <Services />
       <Steps />
@@ -22,3 +24,4 @@ function Home() {
 }
 
 export default Home
+

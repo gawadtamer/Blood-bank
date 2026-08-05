@@ -16,33 +16,42 @@ function Footer() {
             <span className="font-display font-bold text-lg text-white">بنك الدم</span>
           </div>
           <p className="text-sm leading-7 text-cream/60">
-            منصة إلكترونية تهدف لتسهيل حجز أكياس الدم ومعرفة فصيلة الدم لأهالي محافظة الدقهلية،
-            وربطهم بأقرب المستشفيات وبنوك الدم.
+            منصة إلكترونية تهدف لتسهيل حجز أكياس الدم وتلقي طلبات الطوارئ لأهالي محافظة الدقهلية،
+            وربطهم بأقرب المستشفيات وبنوك الدم وشبكة المتبرعين.
           </p>
         </div>
 
         <div>
-          <h4 className="font-display font-bold text-white mb-4">روابط سريعة</h4>
+          <h4 className="font-display font-bold text-white mb-4">خدمات المرضى والطوارئ</h4>
           <ul className="space-y-2.5 text-sm text-cream/60">
-            <li><Link to="/" className="hover:text-crimson-300 transition-colors">الرئيسية</Link></li>
-            <li><Link to="/booking" className="hover:text-crimson-300 transition-colors">حجز موعد</Link></li>
+            <li><Link to="/request-blood" className="hover:text-crimson-300 transition-colors">طلب كيس دم (Request Blood)</Link></li>
+            <li><Link to="/find-blood" className="hover:text-crimson-300 transition-colors">البحث عن دم (Find Blood)</Link></li>
+            <li><Link to="/availability" className="hover:text-crimson-300 transition-colors">توفر فصائل الدم (Availability)</Link></li>
+            <li><Link to="/track-request" className="hover:text-crimson-300 transition-colors">تتبع حالة الطلب (Track Status)</Link></li>
+            <li><Link to="/campaigns" className="hover:text-crimson-300 transition-colors">حملات التبرع الميدانية</Link></li>
+            <li><Link to="/map" className="hover:text-crimson-300 transition-colors">خريطة المستشفيات التفاعلية</Link></li>
+            <li><Link to="/dashboard" className="hover:text-crimson-300 transition-colors">لوحة تحكم المريض (Dashboard)</Link></li>
             <li><Link to="/hospitals" className="hover:text-crimson-300 transition-colors">المستشفيات وبنوك الدم</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="font-display font-bold text-white mb-4">فصائل الدم</h4>
+          <h4 className="font-display font-bold text-white mb-4">فصائل الدم المتاحة</h4>
           <ul className="grid grid-cols-4 gap-2 text-sm text-cream/60 type-tick">
-            {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((t) => (
-              <li key={t} className="text-center bg-white/5 rounded-lg py-1.5">{t}</li>
+            {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((t) => (
+              <li key={t}>
+                <Link to={`/find-blood?bloodType=${t}`} className="block text-center bg-white/5 hover:bg-crimson-600 hover:text-white transition-colors rounded-lg py-1.5 font-bold">
+                  {t}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>
 
         <div>
-          <h4 className="font-display font-bold text-white mb-4">تواصل معنا</h4>
+          <h4 className="font-display font-bold text-white mb-4">تواصل معنا والطوارئ</h4>
           <ul className="space-y-3 text-sm text-cream/60">
-            <li className="flex items-center gap-2"><FiPhone className="text-crimson-300" /> 050-2202222</li>
+            <li className="flex items-center gap-2"><FiPhone className="text-crimson-300" /> طوارئ الدقهلية: 050-2202222</li>
             <li className="flex items-center gap-2"><FiMail className="text-crimson-300" /> info@dakahlia-bloodbank.eg</li>
             <li className="flex items-center gap-2"><FiMapPin className="text-crimson-300" /> المنصورة، محافظة الدقهلية</li>
           </ul>
@@ -51,7 +60,7 @@ function Footer() {
               <a
                 key={i}
                 href="#"
-                className="h-9 w-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-crimson-600 transition-colors"
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-crimson-600 transition-colors text-white"
                 aria-label="رابط تواصل اجتماعي"
               >
                 <Icon />
@@ -62,7 +71,7 @@ function Footer() {
       </div>
 
       <div className="border-t border-white/10 py-5 text-center text-xs text-cream/40">
-        © {year} بنك الدم بمحافظة الدقهلية. جميع الحقوق محفوظة.
+        © {year} بنك الدم بمحافظة الدقهلية - جميع الحقوق محفوظة | جميع العمليات الطبية تحت إشراف المراكز المعتمدة.
       </div>
     </footer>
   )
