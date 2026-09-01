@@ -1,5 +1,10 @@
 // خدمة إدارة طلبات الدم وتوفر الدم والمتبرعين والإشعارات
-// مصممة لسهولة ربطها لاحقًا بـ API أو قاعدة بيانات حقيقية (Backend-ready Architecture)
+// تدعم التبديل السلس بين التخزين المحلي (Mock / LocalStorage) والربط مع الباك إند (Real API)
+
+import API from './api'
+
+// مفتاح التبديل للبيانات المؤقتة: قراءة من .env
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA !== 'false'
 
 const STORAGE_KEYS = {
   REQUESTS: 'blood_bank_patient_requests',
@@ -8,7 +13,7 @@ const STORAGE_KEYS = {
   AVAILABILITY: 'blood_bank_availability_data'
 }
 
-// البيانات الأولية الافتراضية
+// البيانات الأولية الافتراضية للوضع المؤقت
 const initialAvailability = [
   { type: 'A+', name: 'A موجب', units: 28, status: 'Available', statusAr: 'متوفر', color: 'green', canDonateTo: ['A+', 'AB+'], canReceiveFrom: ['A+', 'A-', 'O+', 'O-'] },
   { type: 'A-', name: 'A سالب', units: 6, status: 'Low Stock', statusAr: 'رصيد منخفض', color: 'amber', canDonateTo: ['A+', 'A-', 'AB+', 'AB-'], canReceiveFrom: ['A-', 'O-'] },
@@ -88,7 +93,7 @@ const initialNotifications = [
   { id: 'NOTIF-3', title: 'تم العثور على متبرع متطابق', body: 'تم العثور على متبرعين حاملي فصيلة O- بالقرب من المنصورة.', time: 'أمس', read: true, type: 'warning', link: '/dashboard' }
 ]
 
-// دالة مساعدة لجلب البيانات من التخزين
+// دوال مساعدة للتخزين المحلي
 const getStorageItem = (key, fallback) => {
   try {
     const item = localStorage.getItem(key)
@@ -99,7 +104,6 @@ const getStorageItem = (key, fallback) => {
   }
 }
 
-// دالة مساعدة لحفظ البيانات بالتخزين
 const setStorageItem = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value))
@@ -108,7 +112,6 @@ const setStorageItem = (key, value) => {
   }
 }
 
-// تهيئة البيانات الافتراضية
 export const initializeData = () => {
   if (!localStorage.getItem(STORAGE_KEYS.REQUESTS)) {
     setStorageItem(STORAGE_KEYS.REQUESTS, initialRequests)
@@ -124,8 +127,22 @@ export const initializeData = () => {
   }
 }
 
-// 1. إنشاء طلب دم جديد
-export const createBloodRequest = (data) => {
+// -------------------------------------------------------------
+// APIs / Services (تدعم كلاً من الـ Mock و Real API)
+// -------------------------------------------------------------
+
+/**
+ * 1. إنشاء طلب دم جديد (Create Request)
+ * API Endpoint: POST /api/requests
+ */
+export const createBloodRequest = async (data) => {
+  if (!USE_MOCK_DATA) {
+    // إرسال الطلب للباك إند الحقيقي
+    const response = await API.post('/requests', data)
+    return response.data
+  }
+
+  // --- وضع المحاكاة LocalStorage ---
   initializeData()
   const requests = getStorageItem(STORAGE_KEYS.REQUESTS, initialRequests)
   const reqId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`
@@ -162,7 +179,6 @@ export const createBloodRequest = (data) => {
   const updatedRequests = [newReq, ...requests]
   setStorageItem(STORAGE_KEYS.REQUESTS, updatedRequests)
 
-  // إضافة إشعار
   addNotification({
     title: isEmergency ? '🚨 تم تقديم طلب دم عاجل (طوارئ)' : 'تم تقديم طلب الدم بنجاح',
     body: `تم تسجيل طلبك برقم ${reqId} لفصيلة ${data.bloodType} بـ ${data.hospital}.`,
@@ -173,8 +189,45 @@ export const createBloodRequest = (data) => {
   return newReq
 }
 
-// 2. البحث عن توفر الدم
-export const searchBloodAvailability = (filters = {}) => {
+/**
+ * 2. جلب جميع الطلبات (Get All Requests)
+ * API Endpoint: GET /api/requests
+ */
+export const getAllRequests = async () => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.get('/requests')
+    return response.data
+  }
+
+  initializeData()
+  return getStorageItem(STORAGE_KEYS.REQUESTS, initialRequests)
+}
+
+/**
+ * 3. تتبع طلب معين بواسطة الرقم (Get Request By ID)
+ * API Endpoint: GET /api/requests/:id
+ */
+export const getRequestStatus = async (reqId) => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.get(`/requests/${reqId}`)
+    return response.data
+  }
+
+  initializeData()
+  const requests = getStorageItem(STORAGE_KEYS.REQUESTS, initialRequests)
+  return requests.find((r) => r.id.toLowerCase() === reqId.trim().toLowerCase()) || null
+}
+
+/**
+ * 4. البحث عن توفر الدم (Search Blood Availability)
+ * API Endpoint: GET /api/availability/search
+ */
+export const searchBloodAvailability = async (filters = {}) => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.get('/availability/search', { params: filters })
+    return response.data
+  }
+
   initializeData()
   const centers = [
     { id: 1, hospital: 'مستشفى المنصورة الجامعي', city: 'المنصورة', governorate: 'الدقهلية', bloodType: 'O+', units: 14, status: 'Available', statusAr: 'متوفر', distance: '1.2 كم', phone: '050-2202222', address: 'شارع الجامعة، المنصورة' },
@@ -197,8 +250,16 @@ export const searchBloodAvailability = (filters = {}) => {
   })
 }
 
-// 3. البحث عن المتبرعين المطابقين
-export const findMatchingDonors = (bloodType, location = '') => {
+/**
+ * 5. البحث عن المتبرعين المطابقين (Find Matching Donors)
+ * API Endpoint: GET /api/donors/search
+ */
+export const findMatchingDonors = async (bloodType, location = '') => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.get('/donors/search', { params: { bloodType, location } })
+    return response.data
+  }
+
   initializeData()
   const donors = getStorageItem(STORAGE_KEYS.DONORS, initialDonors)
   return donors.filter((d) => {
@@ -208,32 +269,40 @@ export const findMatchingDonors = (bloodType, location = '') => {
   })
 }
 
-// 4. الحصول على حالة الطلب حسب الرقم
-export const getRequestStatus = (reqId) => {
-  initializeData()
-  const requests = getStorageItem(STORAGE_KEYS.REQUESTS, initialRequests)
-  return requests.find((r) => r.id.toLowerCase() === reqId.trim().toLowerCase()) || null
-}
+/**
+ * 6. جلب بيانات توفر الدم العامة (Dashboard Availability)
+ * API Endpoint: GET /api/availability/overview
+ */
+export const getBloodAvailabilityDashboardData = async () => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.get('/availability/overview')
+    return response.data
+  }
 
-// 5. جلب كافة الطلبات
-export const getAllRequests = () => {
-  initializeData()
-  return getStorageItem(STORAGE_KEYS.REQUESTS, initialRequests)
-}
-
-// 6. جلب بيانات توفر الدم العامة
-export const getBloodAvailabilityDashboardData = () => {
   initializeData()
   return getStorageItem(STORAGE_KEYS.AVAILABILITY, initialAvailability)
 }
 
-// 7. إدارة الإشعارات
-export const getNotifications = () => {
+/**
+ * 7. إدارة الإشعارات (Notifications)
+ * API Endpoint: GET /api/notifications
+ */
+export const getNotifications = async () => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.get('/notifications')
+    return response.data
+  }
+
   initializeData()
   return getStorageItem(STORAGE_KEYS.NOTIFICATIONS, initialNotifications)
 }
 
-export const addNotification = (notif) => {
+export const addNotification = async (notif) => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.post('/notifications', notif)
+    return response.data
+  }
+
   initializeData()
   const list = getStorageItem(STORAGE_KEYS.NOTIFICATIONS, initialNotifications)
   const newNotif = {
@@ -250,7 +319,12 @@ export const addNotification = (notif) => {
   return updated
 }
 
-export const markNotificationAsRead = (id) => {
+export const markNotificationAsRead = async (id) => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.patch(`/notifications/${id}/read`)
+    return response.data
+  }
+
   initializeData()
   const list = getStorageItem(STORAGE_KEYS.NOTIFICATIONS, initialNotifications)
   const updated = list.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -258,7 +332,12 @@ export const markNotificationAsRead = (id) => {
   return updated
 }
 
-export const markAllNotificationsAsRead = () => {
+export const markAllNotificationsAsRead = async () => {
+  if (!USE_MOCK_DATA) {
+    const response = await API.patch('/notifications/read-all')
+    return response.data
+  }
+
   initializeData()
   const list = getStorageItem(STORAGE_KEYS.NOTIFICATIONS, initialNotifications)
   const updated = list.map((n) => ({ ...n, read: true }))
